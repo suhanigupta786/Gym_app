@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Flame, Dumbbell, BarChart3, Activity, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 
@@ -47,10 +48,10 @@ const HomePage = () => {
             <h2 className="text-xl font-bold text-white">Recent Workouts</h2>
           </div>
           
-          <button className="flex items-center text-purple-400 hover:text-purple-300 transition-colors cursor-pointer">
-            <span className="mr-1">View All</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          <Link to="/workouts" className="flex items-center text-purple-400 hover:text-purple-300 transition-colors cursor-pointer group">
+            <span className="mr-1 group-hover:underline">View All</span>
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
         
         {recentWorkouts.length > 0 ? (
