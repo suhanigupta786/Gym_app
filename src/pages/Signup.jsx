@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { updateProfile } from 'firebase/auth';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -20,35 +21,51 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Form validation
+
+    // Validation checks
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     if (!validateEmail(email)) {
       setError('Please enter a valid email address');
       return;
     }
-    
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
-    
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    
+
     try {
       setError('');
       setLoading(true);
-      await signup(name, email, password);
-      navigate('/');
+
+      // ✓ Create a new user with email and password
+      const userCredential = await signup(email, password);
+
+      // ✓ Update the user profile with display name
+      if (userCredential && userCredential.user) {
+        await updateProfile(userCredential.user, { displayName: name });
+      }
+
+      navigate('/workouts');
     } catch (err) {
-      setError(err.message);
+      console.error('Signup error:', err.code, err.message);
+      // Handle Firebase errors
+      if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already in use');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -62,18 +79,23 @@ const Signup = () => {
             <UserPlus className="h-8 w-8 text-purple-400" />
           </div>
         </div>
-        
-        <h1 className="text-2xl font-bold text-white text-center mb-2">Create Account</h1>
-        <p className="text-gray-400 text-center mb-8">Join WorkoutTracker to track your fitness journey</p>
-        
+
+        <h1 className="text-2xl font-bold text-white text-center mb-2">
+          Create Account
+        </h1>
+        <p className="text-gray-400 text-center mb-8">
+          Join WorkoutTracker to track your fitness journey
+        </p>
+
         {error && (
           <div className="bg-red-900/30 border border-red-500 text-red-300 px-4 py-3 rounded-lg flex items-center mb-6">
             <AlertCircle className="h-5 w-5 mr-2" />
             <span>{error}</span>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Name */}
           <div className="space-y-2">
             <label className="block text-gray-300 text-sm font-medium">Full Name</label>
             <div className="relative">
@@ -90,7 +112,8 @@ const Signup = () => {
               />
             </div>
           </div>
-          
+
+          {/* Email */}
           <div className="space-y-2">
             <label className="block text-gray-300 text-sm font-medium">Email Address</label>
             <div className="relative">
@@ -107,7 +130,8 @@ const Signup = () => {
               />
             </div>
           </div>
-          
+
+          {/* Password */}
           <div className="space-y-2">
             <label className="block text-gray-300 text-sm font-medium">Password</label>
             <div className="relative">
@@ -122,10 +146,11 @@ const Signup = () => {
                 placeholder="••••••••"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
           </div>
-          
+
+          {/* Confirm Password */}
           <div className="space-y-2">
             <label className="block text-gray-300 text-sm font-medium">Confirm Password</label>
             <div className="relative">
@@ -142,7 +167,8 @@ const Signup = () => {
               />
             </div>
           </div>
-          
+
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -153,7 +179,7 @@ const Signup = () => {
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
-        
+
         <div className="mt-8 text-center">
           <p className="text-gray-400">
             Already have an account?{' '}
@@ -167,4 +193,4 @@ const Signup = () => {
   );
 };
 
-export default Signup; 
+export default Signup;

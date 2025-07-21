@@ -14,7 +14,7 @@ export const WorkoutProvider = ({ children }) => {
 
   useEffect(() => {
     calculateStats();
-  }, [workouts]);
+  },[workouts]);
 
   const calculateStats = () => {
     const totalCalories = workouts.reduce((sum, workout) => sum + workout.calories, 0);

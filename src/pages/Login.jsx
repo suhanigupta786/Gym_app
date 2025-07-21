@@ -9,23 +9,33 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     try {
       setError('');
       setLoading(true);
-      await login(email, password);
-      navigate('/');
+      await login(email, password); // Firebase auth through context
+      navigate('/workouts'); // 👈 redirect after successful login
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      // Firebase error messages can be very technical. So you can customize them below:
+      if (
+        err.code === 'auth/user-not-found' ||
+        err.code === 'auth/wrong-password'
+      ) {
+        setError('Invalid email or password');
+      } else {
+        setError(err.message || 'Failed to sign in');
+      }
     } finally {
       setLoading(false);
     }
@@ -39,20 +49,26 @@ const Login = () => {
             <LogIn className="h-8 w-8 text-purple-400" />
           </div>
         </div>
-        
-        <h1 className="text-2xl font-bold text-white text-center mb-2">Welcome Back</h1>
-        <p className="text-gray-400 text-center mb-8">Sign in to continue to WorkoutTracker</p>
-        
+
+        <h1 className="text-2xl font-bold text-white text-center mb-2">
+          Welcome Back
+        </h1>
+        <p className="text-gray-400 text-center mb-8">
+          Sign in to continue to WorkoutTracker
+        </p>
+
         {error && (
           <div className="bg-red-900/30 border border-red-500 text-red-300 px-4 py-3 rounded-lg flex items-center mb-6">
             <AlertCircle className="h-5 w-5 mr-2" />
             <span>{error}</span>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="block text-gray-300 text-sm font-medium">Email Address</label>
+            <label className="block text-gray-300 text-sm font-medium">
+              Email Address
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-gray-500" />
@@ -67,9 +83,11 @@ const Login = () => {
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
-            <label className="block text-gray-300 text-sm font-medium">Password</label>
+            <label className="block text-gray-300 text-sm font-medium">
+              Password
+            </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-500" />
@@ -84,7 +102,7 @@ const Login = () => {
               />
             </div>
           </div>
-          
+
           <button
             type="submit"
             disabled={loading}
@@ -95,11 +113,14 @@ const Login = () => {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
-        
+
         <div className="mt-8 text-center">
           <p className="text-gray-400">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium">
+            <Link
+              to="/signup"
+              className="text-purple-400 hover:text-purple-300 font-medium"
+            >
               Sign Up
             </Link>
           </p>
@@ -109,4 +130,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;

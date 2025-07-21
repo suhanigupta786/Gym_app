@@ -1,93 +1,57 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+// src/context/AuthContext.js
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { auth } from '../firebase';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  onAuthStateChanged,
+} from 'firebase/auth';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const signup = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    if (users.some(user => user.email === email)) {
-      throw new Error('Email already in use');
-    }
-    
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      password,
-      createdAt: new Date().toISOString()
-    };
-    
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    const { password: _, ...userWithoutPassword } = newUser;
-    setCurrentUser(userWithoutPassword);
-    localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-    
-    return userWithoutPassword;
+  // ✅ Firebase signup - returns userCredential
+  const signup = (email, password) => {
+    return createUserWithEmailAndPassword(auth, email, password);
   };
 
+  // ✅ Firebase login - returns userCredential
   const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    const user = users.find(user => user.email === email && user.password === password);
-    
-    if (!user) {
-      throw new Error('Invalid email or password');
+    return signInWithEmailAndPassword(auth, email, password);
+  };
+
+  // ✅ Logout
+  const logout = () => signOut(auth);
+
+  // ✅ Update profile (e.g. displayName)
+  const updateUserProfile = (updates) => {
+    if (auth.currentUser) {
+      return updateProfile(auth.currentUser, updates);
     }
-    
-    const { password: _, ...userWithoutPassword } = user;
-    setCurrentUser(userWithoutPassword);
-    localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-    
-    return userWithoutPassword;
+    return null;
   };
 
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('currentUser');
-  };
-
-  const updateProfile = (updates) => {
-    if (!currentUser) return;
-    
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    const updatedUsers = users.map(user => {
-      if (user.id === currentUser.id) {
-        return { ...user, ...updates };
-      }
-      return user;
+  // ✅ Listen to auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
     });
-    
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    
-    const updatedUser = { ...currentUser, ...updates };
-    setCurrentUser(updatedUser);
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    
-    return updatedUser;
-  };
+
+    return unsubscribe;
+  }, []);
 
   const value = {
     currentUser,
-    loading,
-    signup,
     login,
+    signup,
     logout,
-    updateProfile
+    updateUserProfile,
   };
 
   return (
@@ -99,10 +63,8 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === null) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
-
-export default AuthContext; 
